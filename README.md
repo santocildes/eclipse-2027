@@ -64,12 +64,17 @@ IGN, meteorología de Open-Meteo, satélite de ESRI. MapTiler es opcional.
 
 ## Qué hace
 
-**Destinos** — La pantalla principal. Compara todos los destinos por duración de
-la totalidad, distancia, tiempo de viaje y previsión de nubes, ordenables por
-«más totalidad», «mejor relación con el viaje» o «más cerca». Avisa cuando hay
-que cruzar el Estrecho en barco y da las horas en el huso de cada país: en
-Marruecos el máximo es una hora antes que en la Península, y confundirlo
-arruinaría el viaje.
+**Destinos** — La pantalla principal. **101 destinos en los nueve países** que
+cruza la franja, filtrables por región (Península y Estrecho, Magreb, Libia,
+Egipto, península arábiga, Yemen y Cuerno de África) y ordenables por duración,
+cercanía o relación entre lo que ganas y lo que tardas.
+
+Elige el medio de transporte que tiene sentido: coche, coche más ferri si hay
+que cruzar el Estrecho, o avión a partir de unos cientos de kilómetros. Presentar
+«Luxor, 60 h en coche» no ayudaba a nadie.
+
+Da las horas en el huso de cada país: en Marruecos el máximo es una hora antes
+que en la Península, y confundirlo arruinaría el viaje.
 
 **Mapa** — Franja de totalidad y línea central sobre relieve sombreado, con
 nubosidad prevista superponible.
@@ -85,6 +90,29 @@ reales calculadas por las mismas efemérides que el resto de la app.
 **Obstáculos** — Se llega desde la ficha del punto. Con el Sol a 40° el relieve
 casi nunca estorba (haría falta algo que se eleve 780 m por kilómetro), pero
 sigue siendo útil en sitios encajonados o con edificios delante.
+
+---
+
+## ¿Se puede perseguir la sombra?
+
+Pregunta recurrente, y la respuesta sale del propio motor. La umbra viaja a
+**2.402 km/h en su punto más lento** —sobre Luxor, a las 10:05 UTC— y supera los
+10.000 km/h al amanecer sobre el Atlántico.
+
+| Vehículo | km/h | Totalidad | Ganancia |
+|---|---|---|---|
+| Parado | 0 | 6m 26s | — |
+| Barco rápido | 40 | 6m 32s | +2% |
+| Helicóptero | 260 | 7m 12s | +12% |
+| Avión comercial | 900 | 10m 17s | +60% |
+| Concorde | 2.180 | 69m 30s | +982% |
+
+En barco es inviable: seis segundos de premio. Haría falta Mach 2 sostenido, y
+solo el Concorde se acercó — en 1973 persiguió un eclipse sobre el Sáhara durante
+74 minutos, todavía el récord.
+
+Lo que sí funciona es un vuelo comercial bien planificado: convierte seis minutos
+en diez.
 
 ---
 

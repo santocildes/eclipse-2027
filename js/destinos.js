@@ -12,7 +12,7 @@
 // llegar, y qué probabilidad hay de que las nubes lo estropeen.
 
 import { localCircumstances } from './eclipse.js';
-import { CIUDADES, requiereBarco, CRUCES_MARITIMOS } from './places.js';
+import { CIUDADES, requiereBarco, CRUCES_MARITIMOS, regionDe } from './places.js';
 import { EVENTO, husoDe, horaLocal } from './evento.js';
 import { fetchPuntosForecast, visibilityScore } from './clouds.js';
 import { state, toast, fmtDuration } from './app.js';
@@ -39,26 +39,40 @@ function distanciaKm(aLat, aLon, bLat, bLon) {
   return 6371 * 2 * Math.asin(Math.sqrt(h));
 }
 
+// Vuelo: velocidad de crucero, más el peaje fijo de ir al aeropuerto, facturar,
+// esperar y salir al otro lado. Sin ese peaje, un vuelo de 500 km saldría más
+// rápido que el coche, cosa que casi nunca es cierta.
+const KMH_AVION = 780;
+const MINUTOS_AEROPUERTO = 210;
+
 /**
- * Estimación del viaje. La distancia en línea recta se corrige por un factor de
- * sinuosidad —las carreteras no van rectas— y se suma la travesía cuando hay
- * que cruzar el Estrecho.
+ * Estimación del viaje, eligiendo el medio que tiene sentido.
+ *
+ * La franja cruza nueve países y llega hasta Somalia: presentar «Luxor, 60 h en
+ * coche» era información inútil. Se comparan coche (con travesía si hay que
+ * cruzar el Estrecho) y avión, y se ofrece el más rápido — que a partir de unos
+ * cientos de kilómetros es siempre el avión.
  */
 function viaje(desde, hasta) {
   const linea = distanciaKm(desde.lat, desde.lon, hasta.lat, hasta.lon);
   const porCarretera = linea * 1.25;
-  let minutos = (porCarretera / KMH_CARRETERA) * 60;
+  let minutosCoche = (porCarretera / KMH_CARRETERA) * 60;
 
   const barco = requiereBarco(hasta.provincia) && !requiereBarco(desde.provincia ?? 'x');
   if (barco) {
-    // Travesía más el margen de embarque y facturación, que el día del eclipse
-    // será generoso: los ferris irán llenos.
+    // Travesía más el margen de embarque, que el día del eclipse será generoso.
     const cruce = CRUCES_MARITIMOS
       .filter((c) => c.hasta.includes(hasta.nombre) || hasta.provincia === 'Marruecos')
       .sort((a, b) => a.minutos - b.minutos)[0] ?? CRUCES_MARITIMOS[0];
-    minutos += cruce.minutos + 90;
+    minutosCoche += cruce.minutos + 90;
   }
-  return { km: Math.round(porCarretera), minutos: Math.round(minutos), barco };
+
+  const minutosAvion = (linea / KMH_AVION) * 60 + MINUTOS_AEROPUERTO;
+
+  if (linea > 60 && minutosAvion < minutosCoche) {
+    return { km: Math.round(linea), minutos: Math.round(minutosAvion), barco: false, avion: true };
+  }
+  return { km: Math.round(porCarretera), minutos: Math.round(minutosCoche), barco, avion: false };
 }
 
 function fmtViaje(min) {
@@ -92,6 +106,7 @@ function calcular() {
       ganancia: (circ.durationTotality ?? 0) - duracionPropia,
       ...v,
       huso: husoDe(c.lat, c.lon),
+      region: regionDe(c.provincia),
       nubes: null,
     };
   });
@@ -113,6 +128,7 @@ function ordenar(lista, criterio) {
 // ── Interfaz ─────────────────────────────────────────────────────────────────
 
 export function init() {
+  $('destRegion').addEventListener('change', render);
   $('destOrden').addEventListener('change', render);
   $('destSoloTotal').addEventListener('change', render);
   $('btnDestNubes').addEventListener('click', cargarNubes);
@@ -125,9 +141,23 @@ function render() {
   if (!cache) cache = calcular();
   const criterio = $('destOrden').value;
   const soloTotal = $('destSoloTotal').checked;
+  const region = $('destRegion').value;
 
   let lista = soloTotal ? cache.filter((d) => d.total) : cache;
-  lista = ordenar(lista, criterio).slice(0, 24);
+
+  // «Cerca de mí» no es una región geográfica sino un radio: con destinos en
+  // nueve países, alguien que planifica desde Madrid no quiere ver Mogadiscio
+  // en la misma lista, pero tampoco quiere elegir región a mano.
+  if (region === 'cerca') lista = lista.filter((d) => d.km <= 1200);
+  else if (region !== 'todas') lista = lista.filter((d) => d.region === region);
+
+  lista = ordenar(lista, criterio).slice(0, 30);
+
+  if (!lista.length) {
+    $('destLista').innerHTML = `<div class="notice">${t('dest.sinResultados')}</div>`;
+    $('destActual').innerHTML = '';
+    return;
+  }
 
   const propio = state.circ;
   const miDur = propio?.durationTotality ?? 0;
@@ -163,6 +193,7 @@ function render() {
         <span class="df-main">
           <span class="df-nombre">${nombreCiudad(d.nombre, idiomaActual())}
             ${d.barco ? `<span class="df-barco">${t('dest.barco')}</span>` : ''}
+            ${d.avion ? `<span class="df-avion">${t('dest.avion')}</span>` : ''}
           </span>
           <span class="df-sub">${nombrePais(d.provincia, idiomaActual())} · ${d.km} ${t('com.km')} · ${fmtViaje(d.minutos)}${
             d.huso.zona !== husoDe(state.lat, state.lon).zona
@@ -226,7 +257,8 @@ function abrirFicha(d) {
       })}</div>` : '';
 
   const barcoNota = d.barco
-    ? `<div class="notice warn">${t('dest.avisoBarco')}</div>` : '';
+    ? `<div class="notice warn">${t('dest.avisoBarco')}</div>`
+    : d.avion ? `<div class="notice">${t('dest.avisoAvion')}</div>` : '';
 
   $('destFicha').innerHTML = `
     <h3>${nombreCiudad(d.nombre, idiomaActual())}</h3>
@@ -248,7 +280,7 @@ function abrirFicha(d) {
       <button class="cta ghost" id="destIr">${t('dest.verMapa')}</button>
     </div>
     <p class="fineprint">
-      ${t('dest.nota')}
+      ${d.avion ? t('dest.notaAvion') : t('dest.nota')}
     </p>`;
 
   dlg.showModal();
