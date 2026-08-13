@@ -71,21 +71,108 @@ export const EVENTO = {
 // geográficos: no hace falta precisión de frontera porque los países implicados
 // están bien separados en longitud y latitud a esta escala.
 
+// Los recuadros solo tienen que acertar la ZONA HORARIA, no el país: el nombre
+// del país sale del propio destino. Eso simplifica mucho, porque Marruecos,
+// Argelia y Túnez comparten UTC+1 y sus fronteras no hace falta separarlas.
+//
+// Las fronteras que SÍ importan son las de cambio de huso:
+//   · Túnez / Libia  → lon 11,5   (UTC+1 → UTC+2)
+//   · Libia / Egipto → lon 25     (UTC+2 → UTC+3)
+//
+// Se usan nombres IANA y no desfases fijos porque EGIPTO REINSTAURÓ EL HORARIO
+// DE VERANO en 2023: el 2 de agosto de 2027 está en UTC+3, no en UTC+2.
+// Codificar «Egipto = +2» habría desplazado una hora todos sus destinos.
+// Comprobado: el máximo son las 10:00 en Marruecos, 11:00 en España y 12:00 en
+// Egipto y Arabia. Tres husos en un mismo eclipse.
+// Los recuadros solo tienen que acertar la ZONA HORARIA, no el país: el nombre
+// del país sale del propio destino.
+//
+// EL ORDEN IMPORTA y no es evidente. Argelia es estrecha por el norte y muy
+// ancha por el Sáhara: un único recuadro que la cubra entera llega hasta
+// longitud −8, y se traga el sur de España. Con Argelia antes que España,
+// Tarifa salía en UTC+1 — una hora de error en la ubicación por defecto de la
+// app. Por eso Iberia va PRIMERO y los países africanos se parten en un
+// recuadro norte estrecho y otro sur ancho.
+//
+// El Estrecho es el punto delicado: Tarifa está a 36,01°N y el extremo norte de
+// Marruecos a 35,93°N. Ocho centésimas de grado. Ceuta y Melilla, que son
+// españolas pero están en África, se resuelven con recuadros propios delante.
+//
+// Se usan nombres IANA y no desfases fijos porque EGIPTO REINSTAURÓ EL HORARIO
+// DE VERANO en 2023: el 2 de agosto de 2027 está en UTC+3, no en UTC+2.
+// Comprobado: el máximo son las 10:47 en Tarifa, 09:47 en Tánger y 13:05 en
+// Luxor. Tres husos en un mismo eclipse.
 const HUSOS = [
-  // Ceuta y Melilla son españolas aunque estén en África: van antes que
-  // Marruecos en la lista porque quedan dentro de su recuadro.
-  { zona: 'Europe/Madrid', pais: 'España', caja: [-5.42, 35.86, -5.25, 35.94] }, // Ceuta
-  { zona: 'Europe/Madrid', pais: 'España', caja: [-3.00, 35.24, -2.88, 35.35] }, // Melilla
-  { zona: 'Africa/Casablanca', pais: 'Marruecos', caja: [-13.5, 27.5, -1.0, 36.0] },
-  { zona: 'Africa/Algiers', pais: 'Argelia', caja: [-1.0, 18.9, 12.0, 37.1] },
-  { zona: 'Africa/Tunis', pais: 'Túnez', caja: [7.5, 30.2, 11.6, 37.6] },
+  // ── Enclaves, primero: caen dentro de recuadros mayores ──
+  { zona: 'Europe/Madrid', pais: 'Ceuta', caja: [-5.42, 35.86, -5.25, 35.94] },
+  { zona: 'Europe/Madrid', pais: 'Melilla', caja: [-3.00, 35.24, -2.88, 35.35] },
+  { zona: 'Europe/Gibraltar', pais: 'Gibraltar', caja: [-5.37, 36.10, -5.33, 36.16] },
+
+  // ── Iberia, antes que África: el sur peninsular queda dentro del recuadro
+  //    sahariano de Argelia si se comprueba después ──
   { zona: 'Atlantic/Canary', pais: 'Canarias', caja: [-18.2, 27.5, -13.3, 29.5] },
-  { zona: 'Europe/Lisbon', pais: 'Portugal', caja: [-9.6, 36.9, -6.2, 42.2] },
-  { zona: 'Europe/Madrid', pais: 'España', caja: [-9.4, 35.9, 4.4, 43.9] },
+  { zona: 'Europe/Lisbon', pais: 'Portugal', caja: [-9.6, 36.9, -6.19, 42.2] },
+  { zona: 'Europe/Madrid', pais: 'España', caja: [-9.4, 35.95, 4.4, 43.9] },
+
+  // ── UTC+3 ──
+  { zona: 'Asia/Riyadh', pais: 'Arabia Saudí', caja: [34.4, 16.0, 55.7, 32.2] },
+  { zona: 'Asia/Aden', pais: 'Yemen', caja: [42.5, 12.1, 54.6, 19.0] },
+  { zona: 'Africa/Djibouti', pais: 'Yibuti', caja: [41.7, 10.9, 43.5, 12.8] },
+  { zona: 'Africa/Mogadishu', pais: 'Somalia', caja: [40.9, -1.7, 51.5, 12.0] },
+  { zona: 'Africa/Asmara', pais: 'Eritrea', caja: [36.4, 12.3, 43.2, 18.1] },
+  { zona: 'Africa/Khartoum', pais: 'Sudán', caja: [21.8, 8.6, 38.6, 22.3] },
+  { zona: 'Africa/Cairo', pais: 'Egipto', caja: [24.6, 21.9, 37.0, 31.7] },
+
+  // ── UTC+2 ──
+  { zona: 'Africa/Tripoli', pais: 'Libia', caja: [9.3, 19.4, 25.2, 33.3] },
+
+  // ── UTC+1. Túnez antes que Argelia (su recuadro la solapa), y cada país
+  //    partido en norte estrecho y sur ancho para respetar su forma real ──
+  { zona: 'Africa/Tunis', pais: 'Túnez', caja: [7.5, 30.1, 11.6, 37.7] },
+  { zona: 'Africa/Algiers', pais: 'Argelia', caja: [-2.3, 32.0, 9.0, 37.2] },
+  { zona: 'Africa/Algiers', pais: 'Argelia', caja: [-8.7, 18.9, 12.0, 32.0] },
+  { zona: 'Africa/Casablanca', pais: 'Marruecos', caja: [-13.3, 32.0, -0.9, 36.0] },
+  { zona: 'Africa/Casablanca', pais: 'Marruecos', caja: [-17.2, 20.7, -8.6, 32.0] },
 ];
 
-/** Huso horario y país de un punto. Por defecto, España. */
-export function husoDe(lat, lon) {
+/**
+ * Zona horaria EXACTA por país o provincia.
+ *
+ * Los destinos ya saben en qué país están, así que no hay por qué deducirlo de
+ * su posición. Los recuadros geográficos de arriba quedan solo como respaldo
+ * para puntos arbitrarios —cuando el usuario toca el mapa— donde no hay dato de
+ * país al que agarrarse.
+ *
+ * Se recurrió a esta tabla porque ningún rectángulo describe bien a Argelia ni
+ * a Marruecos: Argelia es estrecha por el norte y enorme por el Sáhara, y las
+ * fronteras del Magreb no siguen paralelos. Seis destinos salían mal.
+ */
+const ZONA_POR_PAIS = {
+  // España y sus provincias, tal y como figuran en la lista de destinos.
+  'Cádiz': 'Europe/Madrid', 'Málaga': 'Europe/Madrid', 'Granada': 'Europe/Madrid',
+  'Almería': 'Europe/Madrid', 'Sevilla': 'Europe/Madrid', 'Córdoba': 'Europe/Madrid',
+  'Huelva': 'Europe/Madrid', 'Jaén': 'Europe/Madrid', 'Madrid': 'Europe/Madrid',
+  'Barcelona': 'Europe/Madrid', 'Valencia': 'Europe/Madrid', 'Murcia': 'Europe/Madrid',
+  'Alicante': 'Europe/Madrid', 'Badajoz': 'Europe/Madrid', 'Illes Balears': 'Europe/Madrid',
+  'España': 'Europe/Madrid', 'Ceuta': 'Europe/Madrid', 'Melilla': 'Europe/Madrid',
+  'Gibraltar': 'Europe/Gibraltar', 'Portugal': 'Europe/Lisbon', 'Canarias': 'Atlantic/Canary',
+  // Norte de África y Oriente Próximo.
+  'Marruecos': 'Africa/Casablanca', 'Argelia': 'Africa/Algiers', 'Túnez': 'Africa/Tunis',
+  'Libia': 'Africa/Tripoli', 'Egipto': 'Africa/Cairo',
+  'Arabia Saudí': 'Asia/Riyadh', 'Yemen': 'Asia/Aden', 'Somalia': 'Africa/Mogadishu',
+  'Sudán': 'Africa/Khartoum', 'Yibuti': 'Africa/Djibouti', 'Eritrea': 'Africa/Asmara',
+};
+
+/**
+ * Huso horario y país de un punto.
+ *
+ * @param {number} lat
+ * @param {number} lon
+ * @param {string} [pais] país o provincia del destino, si se conoce. Cuando se
+ *   pasa, manda sobre la geometría: es un dato, no una inferencia.
+ */
+export function husoDe(lat, lon, pais) {
+  if (pais && ZONA_POR_PAIS[pais]) return { zona: ZONA_POR_PAIS[pais], pais };
   for (const h of HUSOS) {
     const [w, s, e, n] = h.caja;
     if (lon >= w && lon <= e && lat >= s && lat <= n) return h;
@@ -96,7 +183,7 @@ export function husoDe(lat, lon) {
 /** Formatea una hora en el huso del punto indicado. */
 export function horaLocal(fecha, lat, lon, opts = {}) {
   if (!fecha) return '—';
-  const { zona } = husoDe(lat, lon);
+  const { zona } = husoDe(lat, lon, opts.pais);
   return new Intl.DateTimeFormat('es-ES', {
     hour: '2-digit', minute: '2-digit',
     second: opts.segundos === false ? undefined : '2-digit',

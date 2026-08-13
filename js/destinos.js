@@ -75,6 +75,22 @@ function viaje(desde, hasta) {
   return { km: Math.round(porCarretera), minutos: Math.round(minutosCoche), barco, avion: false };
 }
 
+/**
+ * Porcentaje de obscuración con los decimales necesarios para NO redondear a
+ * 100 lo que no lo es.
+ *
+ * Esto es seguridad ocular, no pulcritud tipográfica. Almería tiene un 99,986%
+ * de obscuración: redondeado a un decimal sale «100,0%», y quien lea eso puede
+ * quitarse las gafas. Pero no es totalidad —queda un filo de fotosfera— y ese
+ * filo basta para quemar la retina. Un parcial nunca debe mostrarse como 100%.
+ */
+function pctObsc(obsc) {
+  const pct = obsc * 100;
+  if (pct >= 99.99) return pct.toFixed(3);
+  if (pct >= 99.9) return pct.toFixed(2);
+  return pct.toFixed(1);
+}
+
 function fmtViaje(min) {
   const h = Math.floor(min / 60), m = Math.round(min % 60);
   return h > 0
@@ -105,7 +121,7 @@ function calcular() {
       obsc: circ.max?.obscuration ?? 0,
       ganancia: (circ.durationTotality ?? 0) - duracionPropia,
       ...v,
-      huso: husoDe(c.lat, c.lon),
+      huso: husoDe(c.lat, c.lon, c.provincia),
       region: regionDe(c.provincia),
       nubes: null,
     };
@@ -178,7 +194,7 @@ function render() {
     const gana = d.ganancia;
     const claseGanancia = !d.total ? 'peor' : gana > 30 ? 'mejor' : gana < -30 ? 'peor' : 'igual';
     const etiquetaGanancia = !d.total
-      ? t('dest.parcialPct', { pct: (d.obsc * 100).toFixed(1) })
+      ? t('dest.parcialPct', { pct: pctObsc(d.obsc) })
       : gana > 5 ? `+${fmtDuration(gana)}`
       : gana < -5 ? `−${fmtDuration(-gana)}`
       : t('dest.igual');
@@ -197,13 +213,15 @@ function render() {
           </span>
           <span class="df-sub">${nombrePais(d.provincia, idiomaActual())} · ${d.km} ${t('com.km')} · ${fmtViaje(d.minutos)}${
             d.huso.zona !== husoDe(state.lat, state.lon).zona
-              ? ` · ${t('dest.horaLocal', { hora: horaLocal(d.circ.max?.date, d.lat, d.lon, { segundos: false }) })}` : ''
+              ? ` · ${t('dest.horaLocal', { hora: horaLocal(d.circ.max?.date, d.lat, d.lon, { segundos: false, pais: d.provincia }) })}` : ''
           }</span>
           ${nubes}
         </span>
         <span class="df-dur">
           <strong>${d.total ? fmtDuration(d.duracion) : '—'}</strong>
           <small class="g-${claseGanancia}">${etiquetaGanancia}</small>
+          <small class="df-gafas ${d.total ? 'si' : 'no'}">${
+            d.total ? t('dest.sinGafas') : t('dest.conGafas')}</small>
         </span>
       </button>`;
   }).join('');
@@ -250,20 +268,24 @@ async function cargarNubes() {
 
 function abrirFicha(d) {
   const dlg = $('destDialog');
-  const hora = horaLocal(d.circ.max?.date, d.lat, d.lon);
+  const hora = horaLocal(d.circ.max?.date, d.lat, d.lon, { pais: d.provincia });
   const husoNota = d.huso.zona !== husoDe(state.lat, state.lon).zona
     ? `<div class="notice warn">${t('dest.avisoHuso', {
-        pais: nombrePais(d.huso.pais, idiomaActual()), hora,
+        pais: nombrePais(d.provincia, idiomaActual()), hora,
       })}</div>` : '';
 
   const barcoNota = d.barco
     ? `<div class="notice warn">${t('dest.avisoBarco')}</div>`
     : d.avion ? `<div class="notice">${t('dest.avisoAvion')}</div>` : '';
 
+  const gafasNota = d.total
+    ? `<div class="notice good">${t('dest.avisoTotal', { dur: fmtDuration(d.duracion) })}</div>`
+    : `<div class="notice error">${t('dest.avisoParcial', { pct: pctObsc(d.obsc) })}</div>`;
+
   $('destFicha').innerHTML = `
     <h3>${nombreCiudad(d.nombre, idiomaActual())}</h3>
     <p class="lead">${nombrePais(d.provincia, idiomaActual())}</p>
-    ${husoNota}${barcoNota}
+    ${gafasNota}${husoNota}${barcoNota}
     <div class="stats" style="margin-bottom:14px">
       <div class="stat"><div class="k">${t('dest.totalidad')}</div>
         <div class="v">${d.total ? fmtDuration(d.duracion) : '—'}</div></div>

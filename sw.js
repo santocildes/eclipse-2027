@@ -9,7 +9,7 @@
 // Los datos externos (teselas, meteorología) se sirven de caché si están, pero
 // nunca bloquean: si no hay red, la app funciona igual, solo que sin mapa nuevo.
 
-const VERSION = 'eclipse2027-v4';
+const VERSION = 'eclipse2027-v5';
 const NUCLEO = `${VERSION}-nucleo`;
 const TESELAS = `${VERSION}-teselas`;
 const DATOS = `${VERSION}-datos`;
