@@ -146,7 +146,7 @@ function ordenar(lista, criterio) {
 export function init() {
   $('destRegion').addEventListener('change', render);
   $('destOrden').addEventListener('change', render);
-  $('destSoloTotal').addEventListener('change', render);
+  $('destTipo').addEventListener('change', render);
   $('btnDestNubes').addEventListener('click', cargarNubes);
   document.addEventListener('eclipse:location', () => { cache = null; render(); });
   document.addEventListener('i18n:cambio', render);
@@ -156,10 +156,12 @@ export function init() {
 function render() {
   if (!cache) cache = calcular();
   const criterio = $('destOrden').value;
-  const soloTotal = $('destSoloTotal').checked;
+  const tipo = $('destTipo').value;
   const region = $('destRegion').value;
 
-  let lista = soloTotal ? cache.filter((d) => d.total) : cache;
+  let lista = cache;
+  if (tipo === 'total') lista = lista.filter((d) => d.total);
+  else if (tipo === 'parcial') lista = lista.filter((d) => !d.total);
 
   // «Cerca de mí» no es una región geográfica sino un radio: con destinos en
   // nueve países, alguien que planifica desde Madrid no quiere ver Mogadiscio
@@ -220,8 +222,8 @@ function render() {
         <span class="df-dur">
           <strong>${d.total ? fmtDuration(d.duracion) : '—'}</strong>
           <small class="g-${claseGanancia}">${etiquetaGanancia}</small>
-          <small class="df-gafas ${d.total ? 'si' : 'no'}">${
-            d.total ? t('dest.sinGafas') : t('dest.conGafas')}</small>
+          <small class="df-tipo ${d.total ? 'total' : 'parcial'}">${
+            d.total ? t('dest.total') : t('dest.parcial')}</small>
         </span>
       </button>`;
   }).join('');

@@ -25,6 +25,12 @@ export const state = {
 
 const modules = {}; // vistas cargadas bajo demanda
 
+// Si esto sigue en false, `state` todavía tiene el Tarifa por defecto: nadie
+// ha geolocalizado, tocado el mapa, buscado una ciudad ni había nada guardado
+// de una visita anterior. Sirve para decidir si conviene geolocalizar sin que
+// el usuario lo pida (ver showView, vista "destinos").
+let ubicacionElegida = false;
+
 // ── Formato de fechas ────────────────────────────────────────────────────────
 // Los formateadores se rehacen al cambiar de idioma: las horas y los números
 // deben salir en la convención de cada locale, no siempre en la española.
@@ -73,6 +79,7 @@ export function toast(msg, ms = 2600) {
 // ── Ubicación ────────────────────────────────────────────────────────────────
 
 export function setLocation(lat, lon, name, elev = null) {
+  ubicacionElegida = true;
   state.lat = lat;
   state.lon = lon;
   state.name = name || `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
@@ -350,6 +357,12 @@ async function showView(name) {
     if (name === 'destinos' && !modules.destinos) {
       modules.destinos = await import('./destinos.js');
       modules.destinos.init();
+      // El comparador calcula coche/barco/avión desde `state`, y si nadie ha
+      // elegido ubicación todavía eso es Tarifa por defecto: alguien en Madrid
+      // vería recomendaciones de viaje pensadas para otra persona. Se intenta
+      // una sola vez (esta rama solo corre la primera vez que se abre la
+      // pestaña); si se deniega, locateMe() ya avisa y no se insiste.
+      if (!ubicacionElegida) locateMe().catch(() => {});
     }
     if (name === 'horizonte' && !modules.horizon) {
       modules.horizon = await import('./horizon-view.js');
@@ -494,6 +507,7 @@ function init() {
   });
 
   const habiaUbicacion = restoreLocation();
+  ubicacionElegida = habiaUbicacion;
   recompute();
   // La pista de "toca el mapa" solo tiene sentido la primera vez: quien ya
   // eligió un sitio en una visita anterior no necesita que se lo recuerden.

@@ -428,12 +428,12 @@ body.vista-scroll .countdown { display: none; }
 .g-peor  { color: var(--poor); }
 /* La distinción total/parcial es de seguridad ocular, no de matiz: en un
    parcial del 99,99% sigue habiendo un filo de Sol que quema la retina. */
-.df-gafas {
+.df-tipo {
   font-size: .6rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
   padding: 1px 6px; border-radius: 999px; width: fit-content; margin-inline-start: auto;
 }
-.df-gafas.si { background: rgba(139,109,255,.18); color: #c3b2ff; }
-.df-gafas.no { background: rgba(255,92,110,.15); color: #ff9aa6; }
+.df-tipo.total   { background: rgba(139,109,255,.18); color: #c3b2ff; }
+.df-tipo.parcial { background: rgba(255,92,110,.15); color: #ff9aa6; }
 
 .dest-nubes {
   font-size: .7rem; padding: 2px 7px; border-radius: 999px; width: fit-content;

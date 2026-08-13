@@ -100,10 +100,11 @@
           <option value="equilibrio" data-i18n="dest.equilibrio">Mejor relación con el viaje</option>
           <option value="cerca" data-i18n="dest.masCerca">Más cerca</option>
         </select>
-        <label class="dest-check">
-          <input type="checkbox" id="destSoloTotal" checked>
-          <span data-i18n="dest.soloTotales">Solo totales</span>
-        </label>
+        <select id="destTipo" aria-label="Tipo de eclipse">
+          <option value="total" data-i18n="dest.total">Eclipse total</option>
+          <option value="parcial" data-i18n="dest.parcial">Eclipse parcial</option>
+          <option value="todos" data-i18n="dest.tipoTodos">Todos</option>
+        </select>
       </div>
 
       <button class="cta ghost" id="btnDestNubes" data-i18n="dest.anadirNubes">Añadir previsión de nubes</button>
