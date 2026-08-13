@@ -111,11 +111,16 @@ h3 { font-size: 1.1rem; margin: 0 0 .75rem; }
 }
 .headbar > button:active { background: rgba(255,255,255,.05); }
 
+/* El selector de idioma tiene que LEERSE como tal. Antes era un «ES» gris de
+   dos letras en el borde y nadie lo identificaba como un control. */
 .hb-idioma {
-  flex: 0 0 auto; font-size: .72rem; font-weight: 700; letter-spacing: .05em;
-  color: var(--muted); padding-inline: 10px !important;
+  flex: 0 0 auto; gap: 4px !important;
+  font-size: .68rem; font-weight: 700; letter-spacing: .05em;
+  color: var(--sun); padding-inline: 9px !important;
   border-inline-end: 1px solid var(--line);
+  flex-direction: column;
 }
+.hb-idioma .ico { width: 19px; height: 19px; fill: var(--sun); }
 .hb-place { flex: 1 1 auto; text-align: start; }
 .hb-place .ico { fill: var(--sun); width: 18px; height: 18px; }
 .hb-text { min-width: 0; display: flex; flex-direction: column; line-height: 1.25; }
@@ -156,6 +161,9 @@ h3 { font-size: 1.1rem; margin: 0 0 .75rem; }
   background: rgba(14,20,36,.9); border: 1px solid var(--line);
   backdrop-filter: blur(12px);
   font-size: .78rem; color: var(--muted);
+  /* Con el evento a un año vista la cuenta es larga ("353 d 23:25:37") y
+     partía en dos líneas. Nunca debe envolver: es una sola cifra. */
+  white-space: nowrap; max-width: calc(100vw - 24px);
 }
 .countdown strong {
   font-variant-numeric: tabular-nums; color: var(--sun); font-size: .95rem; font-weight: 700;

@@ -450,9 +450,19 @@ export const IDIOMAS = Object.entries(CATALOGO).map(([codigo, c]) => ({
 let actual = 'es';
 
 /**
- * Idioma inicial: el guardado, si no el del navegador, si no español.
- * Se acepta cualquier variante regional (es-MX, ar-EG, fr-MA…) quedándose con
- * el prefijo, que es lo que distingue de verdad.
+ * Idioma inicial.
+ *
+ * Orden: lo que el usuario eligió > lo que pide la URL > lo que dice el
+ * navegador > el idioma de la zona horaria > español.
+ *
+ * EL INGLÉS SE TRATA APARTE, y no por capricho. `navigator.languages` refleja la
+ * configuración del navegador, no la lengua materna: muchísima gente usa el
+ * navegador en inglés siendo hispanohablante o arabófona. Coger sin más el
+ * primero de la lista hacía que a un usuario español le saliera la app en
+ * inglés. Como el inglés es el segundo idioma de casi todo el mundo, su
+ * presencia en la lista es una señal DÉBIL; la de español, francés o árabe es
+ * fuerte. Así que si aparece cualquiera de esos, gana sobre el inglés aunque
+ * figure después.
  */
 function detectar() {
   try {
@@ -460,11 +470,40 @@ function detectar() {
     if (guardado && CATALOGO[guardado]) return guardado;
   } catch { /* modo privado */ }
 
-  for (const pref of navigator.languages ?? [navigator.language ?? '']) {
-    const base = String(pref).toLowerCase().split('-')[0];
-    if (CATALOGO[base]) return base;
-  }
+  // ?lang=ar — permite compartir un enlace ya en un idioma concreto.
+  const pedido = new URLSearchParams(location.search).get('lang');
+  if (pedido && CATALOGO[pedido]) return pedido;
+
+  const preferencias = (navigator.languages?.length
+    ? navigator.languages
+    : [navigator.language ?? ''])
+    .map((x) => String(x).toLowerCase().split('-')[0])
+    .filter((x) => CATALOGO[x]);
+
+  const noIngles = preferencias.find((x) => x !== 'en');
+  if (noIngles) return noIngles;
+
+  // Solo inglés en la lista: se contrasta con la zona horaria antes de aceptarlo.
+  // Alguien en Madrid o Casablanca con el navegador en inglés es casi seguro
+  // que prefiere leerlo en su idioma.
+  const porZona = idiomaSegunZonaHoraria();
+  if (porZona) return porZona;
+
+  if (preferencias.includes('en')) return 'en';
   return 'es';
+}
+
+/**
+ * Idioma probable según la zona horaria del dispositivo. Es una pista, no una
+ * certeza, así que solo se usa cuando el navegador no da ninguna otra.
+ */
+function idiomaSegunZonaHoraria() {
+  let zona = '';
+  try { zona = Intl.DateTimeFormat().resolvedOptions().timeZone ?? ''; } catch { return null; }
+  if (/Madrid|Ceuta|Canary/.test(zona)) return 'es';
+  if (/Casablanca|Algiers|Tunis|Tripoli|Cairo|Riyadh|Aden|Mogadishu|El_Aaiun/.test(zona)) return 'ar';
+  if (/Paris|Brussels|Luxembourg|Monaco/.test(zona)) return 'fr';
+  return null;
 }
 
 export function idiomaActual() { return actual; }

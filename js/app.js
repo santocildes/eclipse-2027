@@ -1,6 +1,7 @@
 // js/app.js — orquestador de la aplicación.
 
 import { CONFIG } from './config.js';
+import { EVENTO } from './evento.js';
 import { localCircumstances, eclipseState, sunsetTime, ECLIPSE_DATE } from './eclipse.js';
 import { CIUDADES, buscarCiudades } from './places.js';
 import * as Clouds from './clouds.js';
@@ -84,9 +85,15 @@ export function setLocation(lat, lon, name, elev = null) {
   saveLocation();
 }
 
+// El almacenamiento local es por ORIGEN, no por ruta: las dos apps de eclipses
+// conviven en el mismo dominio y compartirían claves. Sin este prefijo, abrir la
+// de 2027 restauraba la ubicación guardada en la de 2026 — un punto del norte de
+// España que aquí ni siquiera ve el eclipse.
+const CLAVE = (k) => `${EVENTO.id}:${k}`;
+
 function saveLocation() {
   try {
-    localStorage.setItem('eclipse_loc', JSON.stringify({
+    localStorage.setItem(CLAVE('loc'), JSON.stringify({
       lat: state.lat, lon: state.lon, name: state.name, elev: state.elev,
     }));
   } catch { /* modo privado: seguimos sin persistir */ }
@@ -94,7 +101,7 @@ function saveLocation() {
 
 function restoreLocation() {
   try {
-    const raw = localStorage.getItem('eclipse_loc');
+    const raw = localStorage.getItem(CLAVE('loc'));
     if (!raw) return false;
     const s = JSON.parse(raw);
     if (typeof s.lat !== 'number' || typeof s.lon !== 'number') return false;

@@ -22,7 +22,7 @@ let video, canvas, ctx, stream = null;
 let orientation = null;      // { alpha, beta, gamma }
 // Corrección manual de brújula, en grados. Se restaura de la sesión anterior:
 // la desviación magnética depende del sitio, no del momento.
-let headingOffset = Number(localStorage.getItem('ar_heading_offset') ?? 0) || 0;
+let headingOffset = Number(localStorage.getItem(`${EVENTO.id}:ar_offset`) ?? 0) || 0;
 let running = false;
 let rafId = null;
 // Campo de visión horizontal de la cámara trasera típica de un móvil. No hay
@@ -595,5 +595,5 @@ export function ajustarRumbo(delta) {
   $('arCalibLabel').textContent = `brújula ${mostrado > 0 ? '+' : ''}${mostrado}°`;
   // Se guarda: la desviación magnética del sitio no cambia entre sesiones, y
   // volver a calibrar cada vez sería un incordio el día del eclipse.
-  try { localStorage.setItem('ar_heading_offset', String(headingOffset)); } catch { /* modo privado */ }
+  try { localStorage.setItem(`${EVENTO.id}:ar_offset`, String(headingOffset)); } catch { /* modo privado */ }
 }
