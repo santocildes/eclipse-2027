@@ -330,6 +330,7 @@ body.vista-scroll .countdown { display: none; }
 .notice.warn { border-color: var(--mixed); background: rgba(255,196,83,.1); color: #ffd98a; }
 .notice.error { border-color: var(--bad); background: rgba(255,92,110,.1); color: #ffa8b2; }
 .notice.good { border-color: var(--good); background: rgba(53,211,154,.1); color: #86e8c4; }
+.dest-origen-aviso .cta { margin: 10px 0 0; }
 
 .verdict-card {
   border-radius: var(--radius); padding: 16px; margin-bottom: 16px;

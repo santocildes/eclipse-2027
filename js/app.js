@@ -30,6 +30,7 @@ const modules = {}; // vistas cargadas bajo demanda
 // de una visita anterior. Sirve para decidir si conviene geolocalizar sin que
 // el usuario lo pida (ver showView, vista "destinos").
 let ubicacionElegida = false;
+export function hayUbicacionElegida() { return ubicacionElegida; }
 
 // ── Formato de fechas ────────────────────────────────────────────────────────
 // Los formateadores se rehacen al cambiar de idioma: las horas y los números

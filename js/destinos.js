@@ -15,7 +15,7 @@ import { localCircumstances } from './eclipse.js';
 import { CIUDADES, requiereBarco, CRUCES_MARITIMOS, regionDe } from './places.js';
 import { EVENTO, husoDe, horaLocal } from './evento.js';
 import { fetchPuntosForecast, visibilityScore } from './clouds.js';
-import { state, toast, fmtDuration } from './app.js';
+import { state, toast, fmtDuration, locateMe, hayUbicacionElegida } from './app.js';
 import { t, idiomaActual } from './i18n.js';
 import { nombreCiudad, nombrePais } from './nombres.js';
 
@@ -181,8 +181,19 @@ function render() {
   const miDur = propio?.durationTotality ?? 0;
   const miTipo = propio?.type;
 
+  // Mientras nadie haya elegido de dónde parte (ni geolocalización, ni mapa,
+  // ni búsqueda), coche/barco/avión se calculan desde Tarifa por defecto — un
+  // aviso silencioso no basta, así que hay un botón que sí dispara el permiso
+  // del navegador desde un clic real.
+  const avisoOrigen = hayUbicacionElegida() ? '' : `
+    <div class="notice warn dest-origen-aviso">
+      ${t('dest.eligeOrigen')}
+      <button class="cta ghost" id="destUsarUbicacion">${t('dest.usarUbicacion')}</button>
+    </div>`;
+
   // Encabezado: qué tienes ahora mismo donde estás.
   $('destActual').innerHTML = `
+    ${avisoOrigen}
     <div class="dest-actual">
       <div class="da-lugar">${nombreCiudad(state.name, idiomaActual())}</div>
       <div class="da-dato">${
@@ -191,6 +202,8 @@ function render() {
           : `<strong>${t('cab.parcial')} ${((propio?.max?.obscuration ?? 0) * 100).toFixed(1)}%</strong> — ${t('dest.sinCorona')}`
       }</div>
     </div>`;
+
+  $('destUsarUbicacion')?.addEventListener('click', () => locateMe().catch(() => {}));
 
   $('destLista').innerHTML = lista.map((d, i) => {
     const gana = d.ganancia;
