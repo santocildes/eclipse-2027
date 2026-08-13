@@ -16,6 +16,8 @@ import { CIUDADES, requiereBarco, CRUCES_MARITIMOS } from './places.js';
 import { EVENTO, husoDe, horaLocal } from './evento.js';
 import { fetchPuntosForecast, visibilityScore } from './clouds.js';
 import { state, toast, fmtDuration } from './app.js';
+import { t, idiomaActual } from './i18n.js';
+import { nombreCiudad, nombrePais } from './nombres.js';
 
 const $ = (id) => document.getElementById(id);
 const RAD = Math.PI / 180;
@@ -61,7 +63,9 @@ function viaje(desde, hasta) {
 
 function fmtViaje(min) {
   const h = Math.floor(min / 60), m = Math.round(min % 60);
-  return h > 0 ? `${h} h ${String(m).padStart(2, '0')} min` : `${m} min`;
+  return h > 0
+    ? `${h} ${t('com.h')} ${String(m).padStart(2, '0')} ${t('com.min')}`
+    : `${m} ${t('com.min')}`;
 }
 
 // ── Cálculo ──────────────────────────────────────────────────────────────────
@@ -113,6 +117,7 @@ export function init() {
   $('destSoloTotal').addEventListener('change', render);
   $('btnDestNubes').addEventListener('click', cargarNubes);
   document.addEventListener('eclipse:location', () => { cache = null; render(); });
+  document.addEventListener('i18n:cambio', render);
   render();
 }
 
@@ -131,11 +136,11 @@ function render() {
   // Encabezado: qué tienes ahora mismo donde estás.
   $('destActual').innerHTML = `
     <div class="dest-actual">
-      <div class="da-lugar">${state.name}</div>
+      <div class="da-lugar">${nombreCiudad(state.name, idiomaActual())}</div>
       <div class="da-dato">${
         miTipo === 'total'
-          ? `<strong>${fmtDuration(miDur)}</strong> de totalidad`
-          : `<strong>Parcial ${((propio?.max?.obscuration ?? 0) * 100).toFixed(1)}%</strong> — no verás la corona`
+          ? `<strong>${fmtDuration(miDur)}</strong> ${t('dest.deTotalidad')}`
+          : `<strong>${t('cab.parcial')} ${((propio?.max?.obscuration ?? 0) * 100).toFixed(1)}%</strong> — ${t('dest.sinCorona')}`
       }</div>
     </div>`;
 
@@ -143,24 +148,25 @@ function render() {
     const gana = d.ganancia;
     const claseGanancia = !d.total ? 'peor' : gana > 30 ? 'mejor' : gana < -30 ? 'peor' : 'igual';
     const etiquetaGanancia = !d.total
-      ? `parcial ${(d.obsc * 100).toFixed(1)}%`
+      ? t('dest.parcialPct', { pct: (d.obsc * 100).toFixed(1) })
       : gana > 5 ? `+${fmtDuration(gana)}`
       : gana < -5 ? `−${fmtDuration(-gana)}`
-      : 'igual que aquí';
+      : t('dest.igual');
 
     const nubes = d.nubes === null ? ''
       : `<span class="dest-nubes ${d.nubes >= 70 ? 'ok' : d.nubes >= 45 ? 'medio' : 'mal'}">
-           ${d.nubes}/100 cielo</span>`;
+           ${d.nubes}/100</span>`;
 
     return `
       <button class="dest-fila" data-i="${i}">
         <span class="df-rank">${i + 1}</span>
         <span class="df-main">
-          <span class="df-nombre">${d.nombre}
-            ${d.barco ? '<span class="df-barco">barco</span>' : ''}
+          <span class="df-nombre">${nombreCiudad(d.nombre, idiomaActual())}
+            ${d.barco ? `<span class="df-barco">${t('dest.barco')}</span>` : ''}
           </span>
-          <span class="df-sub">${d.provincia} · ${d.km} km · ${fmtViaje(d.minutos)}${
-            d.huso.zona !== 'Europe/Madrid' ? ` · máximo ${horaLocal(d.circ.max?.date, d.lat, d.lon, { segundos: false })} hora local` : ''
+          <span class="df-sub">${nombrePais(d.provincia, idiomaActual())} · ${d.km} ${t('com.km')} · ${fmtViaje(d.minutos)}${
+            d.huso.zona !== husoDe(state.lat, state.lon).zona
+              ? ` · ${t('dest.horaLocal', { hora: horaLocal(d.circ.max?.date, d.lat, d.lon, { segundos: false }) })}` : ''
           }</span>
           ${nubes}
         </span>
@@ -186,7 +192,7 @@ async function cargarNubes() {
   cargandoNubes = true;
   const btn = $('btnDestNubes');
   btn.disabled = true;
-  btn.textContent = 'Consultando…';
+  btn.textContent = t('dest.consultando');
 
   try {
     const puntos = cache.filter((d) => d.total).slice(0, 40);
@@ -207,45 +213,42 @@ async function cargarNubes() {
   } finally {
     cargandoNubes = false;
     btn.disabled = false;
-    btn.textContent = 'Añadir previsión de nubes';
+    btn.textContent = t('dest.anadirNubes');
   }
 }
 
 function abrirFicha(d) {
   const dlg = $('destDialog');
   const hora = horaLocal(d.circ.max?.date, d.lat, d.lon);
-  const husoNota = d.huso.zona !== 'Europe/Madrid'
-    ? `<div class="notice warn">Ojo con el huso: en ${d.huso.pais} el máximo es a las
-       <strong>${hora}</strong> hora local, una hora menos que en la Península.</div>` : '';
+  const husoNota = d.huso.zona !== husoDe(state.lat, state.lon).zona
+    ? `<div class="notice warn">${t('dest.avisoHuso', {
+        pais: nombrePais(d.huso.pais, idiomaActual()), hora,
+      })}</div>` : '';
 
   const barcoNota = d.barco
-    ? `<div class="notice warn">Hay que <strong>cruzar el Estrecho en barco</strong>.
-       La travesía y el embarque ya están en el tiempo estimado, pero el ferri se
-       reserva aparte y el día del eclipse irá lleno.</div>` : '';
+    ? `<div class="notice warn">${t('dest.avisoBarco')}</div>` : '';
 
   $('destFicha').innerHTML = `
-    <h3>${d.nombre}</h3>
-    <p class="lead">${d.provincia}</p>
+    <h3>${nombreCiudad(d.nombre, idiomaActual())}</h3>
+    <p class="lead">${nombrePais(d.provincia, idiomaActual())}</p>
     ${husoNota}${barcoNota}
     <div class="stats" style="margin-bottom:14px">
-      <div class="stat"><div class="k">Totalidad</div>
+      <div class="stat"><div class="k">${t('dest.totalidad')}</div>
         <div class="v">${d.total ? fmtDuration(d.duracion) : '—'}</div></div>
-      <div class="stat"><div class="k">Máximo</div>
+      <div class="stat"><div class="k">${t('cab.maximo')}</div>
         <div class="v" style="font-size:1rem">${hora}</div></div>
-      <div class="stat"><div class="k">Distancia</div>
-        <div class="v">${d.km}<span class="u"> km</span></div></div>
-      <div class="stat"><div class="k">Viaje</div>
+      <div class="stat"><div class="k">${t('dest.distancia')}</div>
+        <div class="v">${d.km}<span class="u"> ${t('com.km')}</span></div></div>
+      <div class="stat"><div class="k">${t('dest.viaje')}</div>
         <div class="v" style="font-size:1rem">${fmtViaje(d.minutos)}</div></div>
     </div>
     <div class="dest-acciones">
       <a class="cta" target="_blank" rel="noopener"
-         href="https://www.google.com/maps/dir/?api=1&destination=${d.lat},${d.lon}">Cómo llegar</a>
-      <button class="cta ghost" id="destIr">Ver en el mapa</button>
+         href="https://www.google.com/maps/dir/?api=1&destination=${d.lat},${d.lon}">${t('dest.comoLlegar')}</a>
+      <button class="cta ghost" id="destIr">${t('dest.verMapa')}</button>
     </div>
     <p class="fineprint">
-      El tiempo de viaje es una estimación a ${KMH_CARRETERA} km/h de media puerta
-      a puerta. No contempla el tráfico del propio día, que en la franja va a ser
-      excepcional.
+      ${t('dest.nota')}
     </p>`;
 
   dlg.showModal();

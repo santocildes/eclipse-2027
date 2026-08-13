@@ -4,6 +4,9 @@ import { CONFIG } from './config.js';
 import { localCircumstances, eclipseState, sunsetTime, ECLIPSE_DATE } from './eclipse.js';
 import { CIUDADES, buscarCiudades } from './places.js';
 import * as Clouds from './clouds.js';
+import * as I18N from './i18n.js';
+import { t } from './i18n.js';
+import { nombreCiudad, nombrePais } from './nombres.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -12,7 +15,7 @@ export const state = {
   // Tarifa: el mejor punto de la Península peninsular, y el arranque natural
   // para entender de qué va este eclipse.
   lat: 36.0143, lon: -5.6044, elev: 20,
-  name: 'Tarifa',
+  name: 'Tarifa',   // canónico; se traduce al mostrarlo
   circ: null,
   horizonProfile: null,
   clouds: null,
@@ -22,13 +25,20 @@ export const state = {
 const modules = {}; // vistas cargadas bajo demanda
 
 // ── Formato de fechas ────────────────────────────────────────────────────────
-const timeFmt = new Intl.DateTimeFormat('es-ES', {
-  hour: '2-digit', minute: '2-digit', second: '2-digit',
-  timeZone: CONFIG.displayTimezone,
-});
-const timeShortFmt = new Intl.DateTimeFormat('es-ES', {
-  hour: '2-digit', minute: '2-digit', timeZone: CONFIG.displayTimezone,
-});
+// Los formateadores se rehacen al cambiar de idioma: las horas y los números
+// deben salir en la convención de cada locale, no siempre en la española.
+let timeFmt, timeShortFmt;
+
+function construirFormateadores() {
+  const loc = I18N.localeActual();
+  timeFmt = new Intl.DateTimeFormat(loc, {
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+    timeZone: CONFIG.displayTimezone,
+  });
+  timeShortFmt = new Intl.DateTimeFormat(loc, {
+    hour: '2-digit', minute: '2-digit', timeZone: CONFIG.displayTimezone,
+  });
+}
 
 export const fmtTime = (d) => (d ? timeFmt.format(d) : '—');
 export const fmtTimeShort = (d) => (d ? timeShortFmt.format(d) : '—');
@@ -36,7 +46,9 @@ export const fmtTimeShort = (d) => (d ? timeShortFmt.format(d) : '—');
 export function fmtDuration(seconds) {
   if (!seconds || seconds <= 0) return '—';
   const m = Math.floor(seconds / 60), s = Math.round(seconds % 60);
-  return m > 0 ? `${m} min ${String(s).padStart(2, '0')} s` : `${s} s`;
+  return m > 0
+    ? `${m} ${t('com.min')} ${String(s).padStart(2, '0')} ${t('com.s')}`
+    : `${s} ${t('com.s')}`;
 }
 
 /** Convierte un acimut en punto cardinal, que es como la gente se orienta. */
@@ -107,7 +119,10 @@ export function recompute() {
 // ── Cabecera ─────────────────────────────────────────────────────────────────
 
 function renderHeader() {
-  $('placeName').textContent = state.name;
+  // El nombre se guarda en su forma canónica y se traduce aquí: así cambiar de
+  // idioma actualiza también el lugar elegido, en vez de dejarlo congelado en
+  // el idioma que hubiera al seleccionarlo.
+  $('placeName').textContent = nombreCiudad(state.name, I18N.idiomaActual());
   $('placeCoords').textContent =
     `${state.lat.toFixed(4)}, ${state.lon.toFixed(4)} · ${Math.round(state.elev)} m`;
 
@@ -120,17 +135,17 @@ function renderHeader() {
   v.hidden = false;
 
   if (c.type === 'total') {
-    badge.textContent = 'Total';
+    badge.textContent = t('cab.total');
     badge.className = 'verdict-badge total';
     sub.textContent = `${fmtDuration(c.durationTotality)} · ${fmtTime(c.max.date)}`;
   } else {
     const pct = (c.max.obscuration * 100).toFixed(pctDigits(c.max.obscuration));
-    badge.textContent = `Parcial ${pct}%`;
+    badge.textContent = `${t('cab.parcial')} ${pct}%`;
     badge.className = 'verdict-badge parcial';
-    sub.textContent = `Máximo ${fmtTime(c.max.date)}`;
+    sub.textContent = `${t('cab.maximo')} ${fmtTime(c.max.date)}`;
   }
   if (!c.sunUpAtMax) {
-    badge.textContent = 'Bajo el horizonte';
+    badge.textContent = t('cab.bajoHorizonte');
     badge.className = 'verdict-badge blocked';
   }
 
@@ -153,8 +168,7 @@ function renderSheet() {
   const c = state.circ;
 
   if (!c || !c.visible) {
-    body.innerHTML = `<div class="notice error">Desde este punto el eclipse no es
-      visible: los discos del Sol y la Luna no llegan a solaparse.</div>`;
+    body.innerHTML = `<div class="notice error">${t('det.noVisible')}</div>`;
     return;
   }
 
@@ -167,12 +181,12 @@ function renderSheet() {
       <time>${fmtTime(date)}</time></div>`);
   };
 
-  add('Primer contacto', c.contacts.c1, '', 'La Luna muerde el Sol');
-  if (c.contacts.c2) add('Empieza la totalidad', c.contacts.c2, 'key total', '¡Quítate las gafas!');
-  add('Máximo', c.max.date, c.type === 'total' ? '' : 'key');
-  if (c.contacts.c3) add('Acaba la totalidad', c.contacts.c3, 'key total', 'Gafas otra vez, ya');
-  add('Último contacto', c.contacts.c4, '', 'Fin del eclipse');
-  if (state.sunset) add('Ocaso', state.sunset, '', 'Sin contar el relieve');
+  add(t('det.c1'), c.contacts.c1, '', t('det.c1sub'));
+  if (c.contacts.c2) add(t('det.c2'), c.contacts.c2, 'key total', t('det.c2sub'));
+  add(t('det.max'), c.max.date, c.type === 'total' ? '' : 'key');
+  if (c.contacts.c3) add(t('det.c3'), c.contacts.c3, 'key total', t('det.c3sub'));
+  add(t('det.c4'), c.contacts.c4, '', t('det.c4sub'));
+  if (state.sunset) add(t('det.ocaso'), state.sunset, '', '');
 
   const avisos = c.notes.map((n) => `<div class="notice warn">${n}</div>`).join('');
 
@@ -185,24 +199,24 @@ function renderSheet() {
   body.innerHTML = `
     ${avisos}
     <div class="stats" style="margin-bottom:14px">
-      <div class="stat"><div class="k">Obscuración</div>
+      <div class="stat"><div class="k">${t('det.obscuracion')}</div>
         <div class="v">${(c.max.obscuration * 100).toFixed(pctDigits(c.max.obscuration))}<span class="u">%</span></div></div>
-      <div class="stat"><div class="k">Magnitud</div>
+      <div class="stat"><div class="k">${t('det.magnitud')}</div>
         <div class="v">${c.max.magnitude.toFixed(3)}</div></div>
-      <div class="stat"><div class="k">Altura del Sol</div>
+      <div class="stat"><div class="k">${t('det.alturaSol')}</div>
         <div class="v">${s.alt.toFixed(1)}<span class="u">°</span></div></div>
-      <div class="stat"><div class="k">Dirección</div>
+      <div class="stat"><div class="k">${t('det.direccion')}</div>
         <div class="v">${cardinal(s.az)}<span class="u"> ${s.az.toFixed(0)}°</span></div></div>
     </div>
     ${c.type === 'total' ? `<div class="card">
-      <h4>Totalidad</h4>
+      <h4>${t('det.totalidad')}</h4>
       <div style="font-size:1.6rem;font-weight:700;color:#c3b2ff">${fmtDuration(c.durationTotality)}</div>
       <p style="margin:6px 0 0;font-size:.85rem;color:var(--muted)">
-        Es el tiempo que podrás mirar al Sol sin filtro. Ni un segundo más.</p>
+        ${t('det.totalidadNota')}</p>
     </div>` : ''}
     ${horizonBlock}
-    <div class="card"><h4>Horario (hora peninsular)</h4>${rows.join('')}</div>
-    <button class="cta ghost" id="irHorizonte">¿Te tapa algo desde aquí?</button>
+    <div class="card"><h4>${t('det.horario')}</h4>${rows.join('')}</div>
+    <button class="cta ghost" id="irHorizonte">${t('det.tapaAlgo')}</button>
     <p class="fineprint">
       Calculado en tu dispositivo con series abreviadas de Meeus. Contrastado con
       las efemérides del IGN y de la NASA: la altura y el acimut del Sol coinciden
@@ -257,18 +271,18 @@ function tickCountdown() {
   let label, value, live = false;
 
   if (c2 && c3 && now >= c2 && now <= c3) {
-    label = 'TOTALIDAD — quítate las gafas';
+    label = t('cuenta.ahora');
     value = `${Math.ceil((c3 - now) / 1000)} s`;
     live = true;
   } else if (now < c1) {
-    label = 'Empieza en';
+    label = t('cuenta.empieza');
     value = hms(c1 - now);
   } else if (now <= c4) {
-    label = c2 && now < c2 ? 'Totalidad en' : 'Termina en';
+    label = c2 && now < c2 ? t('cuenta.totalidadEn') : t('cuenta.termina');
     value = hms((c2 && now < c2 ? c2 : c4) - now);
     live = true;
   } else {
-    label = 'El eclipse ha terminado';
+    label = t('cuenta.terminado');
     value = '';
   }
 
@@ -371,8 +385,9 @@ function initPlaceDialog() {
       const tag = circ.type === 'total'
         ? `<span class="tag total">TOTAL ${fmtDuration(circ.durationTotality)}</span>`
         : `<span class="tag parcial">${(circ.max.obscuration * 100).toFixed(1)}%</span>`;
+      const idi = I18N.idiomaActual();
       return `<button type="button" class="place-item" data-i="${i}">
-        ${tag}${c.nombre}<small>${c.provincia} · ${c.elev} m</small></button>`;
+        ${tag}${nombreCiudad(c.nombre, idi)}<small>${nombrePais(c.provincia, idi)} · ${c.elev} m</small></button>`;
     }).join('');
     results.querySelectorAll('.place-item').forEach((btn) => {
       btn.addEventListener('click', () => {
@@ -435,7 +450,39 @@ function initSheet() {
 
 // ── Arranque ─────────────────────────────────────────────────────────────────
 
+function cablearIdioma() {
+  const dlg = $('idiomaDialog');
+  const pinta = () => {
+    $('idiomaActual').textContent = I18N.idiomaActual().toUpperCase();
+    $('idiomaOpts').innerHTML = I18N.IDIOMAS.map((i) => `
+      <label class="opt">
+        <input type="radio" name="idioma" value="${i.codigo}"
+               ${i.codigo === I18N.idiomaActual() ? 'checked' : ''}>
+        <span class="opt-txt">${i.nombre}<small>${i.codigo.toUpperCase()}${i.dir === 'rtl' ? ' · RTL' : ''}</small></span>
+      </label>`).join('');
+    $('idiomaOpts').querySelectorAll('input').forEach((r) => {
+      r.addEventListener('change', () => {
+        if (r.checked) { I18N.setIdioma(r.value); dlg.close(); }
+      });
+    });
+  };
+  $('btnIdioma').addEventListener('click', () => { pinta(); dlg.showModal(); });
+  pinta();
+}
+
 function init() {
+  I18N.init();
+  construirFormateadores();
+
+  // Al cambiar de idioma hay que rehacer formateadores y repintar todo lo que
+  // se genera desde JavaScript: los nodos con data-i18n los actualiza i18n,
+  // pero las tarjetas y listas se construyen aquí.
+  document.addEventListener('i18n:cambio', () => {
+    construirFormateadores();
+    $('idiomaActual').textContent = I18N.idiomaActual().toUpperCase();
+    recompute();
+  });
+
   const habiaUbicacion = restoreLocation();
   recompute();
   // La pista de "toca el mapa" solo tiene sentido la primera vez: quien ya
@@ -448,6 +495,7 @@ function init() {
 
   initPlaceDialog();
   initSheet();
+  cablearIdioma();
 
   tickCountdown();
   setInterval(tickCountdown, 1000);

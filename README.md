@@ -4,21 +4,44 @@ PWA para planificar el **eclipse total de Sol del 2 de agosto de 2027** en el su
 de España y el norte de Marruecos.
 
 A diferencia del eclipse de 2026, aquí la pregunta no es si el relieve te tapa
-—el Sol estará a unos 40° y casi nada lo estorba— sino **a dónde ir**. La franja
-roza España por el sur y la duración se desploma hacia el borde:
+—el Sol estará a unos 40° y casi nada lo estorba— sino **a dónde ir**.
 
-| Destino | Totalidad |
-|---|---|
-| Tetuán (Marruecos) | 4 min 55 s |
-| Tánger | 4 min 54 s |
-| Ceuta | 4 min 51 s |
-| **Tarifa** | **4 min 41 s** |
-| Cádiz | 2 min 53 s |
-| Málaga | 1 min 47 s |
-| Granada | — (parcial 99,2%) |
+La franja cruza **nueve países** y la duración cambia radicalmente. Verificado
+con el propio motor de la app:
 
-Elegir bien o mal son casi tres minutos de diferencia. Por eso esta app es un
-**planificador de viaje**.
+| Destino | País | Totalidad |
+|---|---|---|
+| Luxor | Egipto | **6 min 26 s** |
+| Bengasi | Libia | 6 min 13 s |
+| Yeda | Arabia Saudí | 5 min 58 s |
+| Sfax | Túnez | 5 min 42 s |
+| Orán | Argelia | 5 min 12 s |
+| **La Meca** | Arabia Saudí | **4 min 59 s** |
+| Tetuán | Marruecos | 4 min 55 s |
+| Tarifa | España | 4 min 41 s |
+| Saná | Yemen | 3 min 01 s |
+| Málaga | España | 1 min 47 s |
+| Granada | España | — (parcial 99,2%) |
+
+España está en el extremo **corto** del recorrido. Elegir bien o mal son minutos
+de diferencia, y por eso esta app es un **planificador de viaje**.
+
+## Idiomas
+
+Disponible en **español, inglés, francés y árabe**.
+
+El árabe no es un idioma más aquí: es lengua oficial en ocho de los nueve países
+con totalidad. Y se escribe de derecha a izquierda, así que la app no solo
+traduce los textos —**refleja la maquetación entera**— usando propiedades CSS
+lógicas (`inset-inline-start` en vez de `left`) para que el navegador lo resuelva
+al cambiar `dir`.
+
+Los topónimos también están localizados: طنجة, Tangier, Tanger, Tánger. Y el
+buscador acepta cualquiera de esas formas, sin importar el idioma en que esté
+puesta la app.
+
+El francés cubre el Magreb, donde es lengua habitual de turismo y tecnología. El
+inglés cubre Gibraltar y al público internacional de cazadores de eclipses.
 
 ---
 

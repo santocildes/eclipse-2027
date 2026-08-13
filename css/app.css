@@ -1,7 +1,12 @@
-/* css/app.css — Eclipse 12A
-   Tema oscuro por defecto: la app se usa al atardecer, mirando a una pantalla
-   con los ojos ya adaptados a poca luz. Un fondo blanco deslumbraría justo
-   cuando hay que mirar al cielo. */
+/* css/app.css — Eclipse 2A
+   Tema oscuro por defecto.
+
+   SOBRE LA DIRECCIÓN DEL TEXTO: la app se traduce al árabe, que se escribe de
+   derecha a izquierda, así que la maquetación tiene que reflejarse entera. Se
+   usan PROPIEDADES LÓGICAS (inset-inline-start en vez de left, margin-inline-end
+   en vez de margin-right…) para que el navegador lo haga solo al cambiar `dir`.
+   Los centrados con left:50% + translateX(-50%) sí se dejan como están: son
+   simétricos y funcionan igual en ambas direcciones. */
 
 :root {
   --bg:        #080b14;
@@ -106,7 +111,12 @@ h3 { font-size: 1.1rem; margin: 0 0 .75rem; }
 }
 .headbar > button:active { background: rgba(255,255,255,.05); }
 
-.hb-place { flex: 1 1 auto; text-align: left; }
+.hb-idioma {
+  flex: 0 0 auto; font-size: .72rem; font-weight: 700; letter-spacing: .05em;
+  color: var(--muted); padding-inline: 10px !important;
+  border-inline-end: 1px solid var(--line);
+}
+.hb-place { flex: 1 1 auto; text-align: start; }
 .hb-place .ico { fill: var(--sun); width: 18px; height: 18px; }
 .hb-text { min-width: 0; display: flex; flex-direction: column; line-height: 1.25; }
 .hb-text strong {
@@ -121,7 +131,7 @@ h3 { font-size: 1.1rem; margin: 0 0 .75rem; }
 .hb-verdict {
   flex: 0 0 auto; flex-direction: column; align-items: flex-end;
   gap: 2px; justify-content: center;
-  border-left: 1px solid var(--line) !important;
+  border-inline-start: 1px solid var(--line) !important;
   background: rgba(255,255,255,.03);
 }
 .hb-vtop { display: flex; align-items: center; gap: 5px; }
@@ -178,7 +188,7 @@ body.vista-scroll .countdown { display: none; }
 }
 
 .map-tools {
-  position: absolute; right: 12px; z-index: 20;
+  position: absolute; inset-inline-end: 12px; z-index: 20;
   top: calc(var(--bajo-cabecera) + 50px);
   display: flex; flex-direction: column; gap: 8px;
 }
@@ -252,7 +262,7 @@ body.vista-scroll .countdown { display: none; }
 
 /* ── Panel deslizante ─────────────────────────────────────── */
 .sheet {
-  position: fixed; left: 0; right: 0; bottom: 0; z-index: 60;
+  position: fixed; inset-inline: 0; bottom: 0; z-index: 60;
   max-height: 88vh; display: flex; flex-direction: column;
   background: var(--bg-2); border-top: 1px solid var(--line);
   border-radius: 20px 20px 0 0;
@@ -265,7 +275,7 @@ body.vista-scroll .countdown { display: none; }
   padding: 11px 0 7px; flex: none;
 }
 .sheet-head .close {
-  position: absolute; right: 12px; top: 6px;
+  position: absolute; inset-inline-end: 12px; top: 6px;
   width: 34px; height: 34px; border: 0; border-radius: 50%;
   background: var(--bg-3); font-size: 1.3rem; line-height: 1; cursor: pointer;
 }
@@ -380,7 +390,7 @@ body.vista-scroll .countdown { display: none; }
 .dest-lista { display: grid; gap: 7px; margin-bottom: 6px; }
 .dest-fila {
   display: grid; grid-template-columns: 26px 1fr auto; gap: 11px; align-items: center;
-  width: 100%; text-align: left; cursor: pointer;
+  width: 100%; text-align: start; cursor: pointer;
   padding: 11px 13px; border-radius: 12px;
   background: var(--bg-3); border: 1px solid var(--line);
 }
@@ -397,7 +407,7 @@ body.vista-scroll .countdown { display: none; }
   background: rgba(91,155,255,.16); color: #8fc0ff; border: 1px solid rgba(91,155,255,.4);
 }
 .df-sub { font-size: .73rem; color: var(--dim); }
-.df-dur { text-align: right; display: flex; flex-direction: column; gap: 2px; }
+.df-dur { text-align: end; display: flex; flex-direction: column; gap: 2px; }
 .df-dur strong { font-size: .95rem; font-variant-numeric: tabular-nums; }
 .df-dur small { font-size: .7rem; }
 .g-mejor { color: var(--good); }
@@ -434,7 +444,7 @@ body.vista-scroll .countdown { display: none; }
 .cloud-level { display: grid; grid-template-columns: 118px 1fr 44px; gap: 10px; align-items: center; font-size: .82rem; }
 .cloud-level .track { height: 8px; border-radius: 4px; background: var(--bg-3); overflow: hidden; }
 .cloud-level .fill { height: 100%; border-radius: 4px; }
-.cloud-level .pct { text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); }
+.cloud-level .pct { text-align: end; font-variant-numeric: tabular-nums; color: var(--muted); }
 .cloud-level small { display: block; color: var(--dim); font-size: .68rem; line-height: 1.3; }
 
 /* ── Realidad aumentada ───────────────────────────────────── */
@@ -444,7 +454,7 @@ body.vista-scroll .countdown { display: none; }
 #arCanvas { position: absolute; inset: 0; width: 100%; height: 100%; }
 .ar-hud { position: absolute; inset: 0; pointer-events: none; }
 .ar-readout {
-  position: absolute; left: 12px; right: 12px; top: calc(var(--safe-top) + 84px);
+  position: absolute; inset-inline: 12px; top: calc(var(--safe-top) + 84px);
   display: flex; gap: 8px; flex-wrap: wrap;
 }
 .ar-chip {
@@ -454,7 +464,7 @@ body.vista-scroll .countdown { display: none; }
 }
 .ar-chip.hot { border-color: var(--sun); color: var(--sun); }
 .ar-guide {
-  position: absolute; left: 0; right: 0; bottom: 24px;
+  position: absolute; inset-inline: 0; bottom: 24px;
   text-align: center; font-size: .92rem; font-weight: 600;
   text-shadow: 0 2px 12px #000;
 }
@@ -479,7 +489,7 @@ body.vista-scroll .countdown { display: none; }
 .ar-frozen { position: absolute; inset: 0; background: #000; }
 #arFrozenCanvas { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; }
 .frozen-bar {
-  position: absolute; left: 12px; right: 12px; bottom: 12px; z-index: 10;
+  position: absolute; inset-inline: 12px; bottom: 12px; z-index: 10;
   padding: 12px 14px; border-radius: var(--radius);
   background: rgba(14,20,36,.93); border: 1px solid var(--line);
   backdrop-filter: blur(14px);
@@ -501,7 +511,7 @@ body.vista-scroll .countdown { display: none; }
 #orbitStage { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 40%, #0d1428, #04060d); }
 #orbitStage canvas { display: block; width: 100%; height: 100%; }
 .orbit-controls {
-  position: absolute; left: 12px; right: 12px; bottom: 12px; z-index: 10;
+  position: absolute; inset-inline: 12px; bottom: 12px; z-index: 10;
   padding: 12px 14px; border-radius: var(--radius);
   background: rgba(14,20,36,.92); border: 1px solid var(--line);
   backdrop-filter: blur(14px);
@@ -512,13 +522,13 @@ body.vista-scroll .countdown { display: none; }
 #orbitSlider { width: 100%; margin: 0 0 10px; accent-color: var(--sun); }
 .orbit-buttons { display: flex; gap: 8px; }
 .orbit-zoom {
-  position: absolute; right: 14px; top: -104px;
+  position: absolute; inset-inline-end: 14px; top: -104px;
   display: flex; flex-direction: column; gap: 8px;
 }
 .orbit-zoom .tool { width: 42px; height: 42px; font-size: 1.3rem; font-weight: 400; }
 .orbit-buttons .tool { flex: 1; width: auto; height: 38px; }
 .orbit-note {
-  position: absolute; left: 12px; right: 12px; top: calc(var(--bajo-cabecera) + 52px);
+  position: absolute; inset-inline: 12px; top: calc(var(--bajo-cabecera) + 52px);
   font-size: .74rem; color: var(--muted); line-height: 1.45;
   background: rgba(8,11,20,.72); border: 1px solid var(--line);
   padding: 7px 11px; border-radius: 10px; backdrop-filter: blur(8px);
@@ -561,13 +571,13 @@ body.vista-scroll .countdown { display: none; }
 }
 .place-results { max-height: 46vh; overflow-y: auto; margin-bottom: 12px; }
 .place-item {
-  display: block; width: 100%; text-align: left; padding: 11px 12px;
+  display: block; width: 100%; text-align: start; padding: 11px 12px;
   background: none; border: 0; border-bottom: 1px solid var(--line);
   cursor: pointer; font-size: .9rem;
 }
 .place-item:last-child { border-bottom: 0; }
 .place-item small { display: block; color: var(--dim); font-size: .74rem; }
-.place-item .tag { float: right; font-size: .7rem; font-weight: 700; }
+.place-item .tag { float: inline-end; font-size: .7rem; font-weight: 700; }
 .place-item .tag.total { color: #c3b2ff; }
 .place-item .tag.parcial { color: var(--sun); }
 .dialog-actions { display: flex; justify-content: flex-end; }
@@ -598,10 +608,24 @@ body.vista-scroll .countdown { display: none; }
 @media (min-width: 760px) {
   .pad { max-width: 720px; margin: 0 auto; }
   .stats { grid-template-columns: repeat(4, 1fr); }
-  .sheet { left: auto; right: 16px; bottom: calc(var(--tabbar-h) + 16px);
+  .sheet { inset-inline-start: auto; inset-inline-end: 16px; bottom: calc(var(--tabbar-h) + 16px);
            width: 400px; border-radius: var(--radius); max-height: 72vh; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   * { animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }
+
+
+/* ── Ajustes para lectura de derecha a izquierda ───────────
+   Las propiedades lógicas cubren casi todo. Aquí quedan los casos en que hay
+   que reflejar algo explícitamente: iconos direccionales y el panel lateral
+   de escritorio. */
+[dir="rtl"] .hb-chev { transform: scaleX(-1); }
+[dir="rtl"] .verdict::after,
+[dir="rtl"] .cab-detalles::after { transform: scaleX(-1); }
+[dir="rtl"] .maplibregl-ctrl-bottom-left { inset-inline-start: 0; }
+
+/* La numeración de la lista de destinos se lee mejor con cifras occidentales
+   incluso en árabe: son las que aparecen en los mapas y en los billetes. */
+.df-rank, .timeline-row time, .stat .v { font-variant-numeric: tabular-nums; }

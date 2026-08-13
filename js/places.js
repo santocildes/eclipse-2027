@@ -100,6 +100,8 @@ export function requiereBarco(provincia) {
   return provincia === 'Marruecos' || provincia === 'Ceuta' || provincia === 'Melilla';
 }
 
+import { aliasDe, nombrePais } from './nombres.js';
+
 /**
  * Búsqueda tolerante a acentos y mayúsculas: quien escribe desde el móvil no
  * pone tildes.
@@ -112,10 +114,14 @@ export function buscarCiudades(query, limite = 30) {
   const q = normaliza(query);
   if (!q) return CIUDADES.slice(0, limite);
 
+  // Se busca contra el nombre canónico Y todas sus traducciones: quien escriba
+  // «طنجة», «Tangier» o «Tánger» debe encontrar el mismo sitio, sin depender
+  // del idioma en que tenga puesta la app.
   const puntua = (c) => {
-    const n = normaliza(c.nombre), p = normaliza(c.provincia);
-    if (n.startsWith(q)) return 0;
-    if (n.includes(q)) return 1;
+    const alias = aliasDe(c.nombre).map(normaliza);
+    const p = normaliza(c.provincia);
+    if (alias.some((a) => a.startsWith(q))) return 0;
+    if (alias.some((a) => a.includes(q))) return 1;
     if (p.startsWith(q)) return 2;
     if (p.includes(q)) return 3;
     return 99;
